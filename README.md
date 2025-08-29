@@ -1,7 +1,7 @@
 
 
 # DO-178C 문서화 패키지
-## BMP 이미지 그레이스케일 및 MEM 파일 변환 소프트웨어
+## BMP 이미지 그레이스케일 및 MEM 파일 변환 엣지 검출  소프트웨어
 
 <img width="320" height="320" alt="brainct_001" src="https://github.com/user-attachments/assets/cd3fc272-a0ea-4ddb-bdec-adac1c0f0959" />
 
@@ -18,9 +18,10 @@
 **소프트웨어 항목**: 
 
 BMP 그레이스케일 변환기 기능: 항공 디스플레이 24비트 컬러 BMP 이미지를 8비트 grayscale 로 변환 
-MEM file 변환 기능 : Graysclae file를   MEM file로 변환 
-Featured Edge image: grayscale image를 featured edge image로 변환 
-그레이스케일로 변환 중요도 레벨: DAL-D (경미한 고장 상황)
+MEM file 변환 기능 : Grayscale file를   MEM file로 변환 
+Featured Edge 추출: grayscale image를 featured edge image로 변환 
+
+
 
 ### 1.2 소프트웨어 생명주기 프로세스
 계획 수립 프로세스
@@ -103,6 +104,7 @@ Featured Edge image: grayscale image를 featured edge image로 변환
 ## 3. 소프트웨어 설계 표준 (SDS)
 ### 3.1 아키텍처 설계
 모듈 구조:
+~~~
  ┌─────────────┐       ┌────────────────┐       ┌─────────────────┐       ┌──────────────────┐
  │   입력 BMP   │  →   │  Gray 변환 모듈 │  →   │   MEM 변환 모듈   │  →   │ FPGA 시뮬레이션 입력 │
  └─────────────┘       └────────────────┘       └─────────────────┘       └──────────────────┘
@@ -116,35 +118,62 @@ Featured Edge image: grayscale image를 featured edge image로 변환
                                   ┌─────────────────┐       ┌──────────────────┐
                                   │   MEM 변환 모듈   │  →   │ FPGA 시뮬레이션 입력 │
                                   └─────────────────┘       └──────────────────┘
+~~~
+
+
 ### 3.2 상세 설계
 **구조체 정의** :
 -BMPFileHeader: BMP 파일 헤더 정보
 -BMPInfoHeader: BMP 정보 헤더
 -RGB: 24비트 RGB 픽셀 데이터
+
+
+**전역변수**
+
+~~~
+소벨필터:
+int sobelX[3][3] = {
+    {-1, 0, 1},
+    {-2, 0, 2},
+    {-1, 0, 1}
+};
+int sobelY[3][3] = {
+    {-1, -2, -1},
+    { 0,  0,  0},
+    { 1,  2,  1}
+};
+~~~
+
 **주요 함수**:
 - main() : 메인 프로세스 제어
 - rgbToGrayscale() : RGB-그레이스케일 변환
+- -unsigned char getPixel(): 안전하게 픽셀 값 가져오기
+-void findEdges(): 소벨 필터로 엣지 찾기
 - 파일 I/O 처리 루틴
 - 메모리 할당/해제 루틴
+
+
 ### 3.3 인터페이스 설계
 **입력 인터페이스**:
 -파일명: "brainct_001.bmp"
 -형식: 24비트 컬러 BMP
 -크기: 630x630 픽셀
 -출력 인터페이스:
+
 -파일명: "output_grayscale.bmp"
 -형식: 8비트 그레이스케일 BMP
 -팔레트: 256색 그레이스케일
-~~~
-BMP__Processor
-├─── File_Handler
-│  ├─── Input_Validator
-│  └─── Output_Generator
-├─── Image_Processor
-│  ├─── Color__Converter
-│  └─── Memory__Manager
-└─── Error_Handler
-~~~
+
+-파일명: "output_edge.bmp.bmp"
+-형식: 8비트 그레이스케일 BMP
+-팔레트: 256색 그레이스케일
+
+-파일명: "output_image.mem"
+-형식: 16비트 MEM 파일 
+
+
+
+
 ## 4. 소프트웨어 코드 표준 (SCS)
 ### 4.1 코딩 규칙
 **명명 규칙**:
@@ -152,6 +181,7 @@ BMP__Processor
 함수: camelCase (예: rgbToGrayscale)
 변수: camelCase (예: imageData)
 상수: UPPER_CASE (예: IMAGE_WIDTH)
+
 **코드 스타일**:
 들여쓰기: 4칸 스페이스
 중괄호: K&R 스타일
@@ -241,7 +271,7 @@ MC/DC (Modified Condition/Decision Coverage): 해당 없음 (DAL-D)
 ---
 
 ## 8. 인증 결론
-본 BMP 그레이스케일 변환 소프트웨어는 DO-178C DAL-D 수준의 요구사항을 충족하도록 설계 및 구현되었습
+본 BMP 그레이스케일 및 MEM파일 변환, Edge 검출  소프트웨어는 DO-178C DAL-D 수준의 요구사항을 충족하도록 설계 및 구현되었습
 니다. 모든 필수 문서가 작성되었으며, 계획된 검증 활동을 통해 소프트웨어의 안전성과 신뢰성이 입증될 것입니
 다.
 승인:
